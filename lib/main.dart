@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:weatherlite/data/sources/local/location_local_source.dart';
+import 'package:weatherlite/data/sources/local/weather_local_source.dart';
+import 'package:weatherlite/storage/isar/services/isar_service.dart';
+import 'package:weatherlite/storage/preferences/app_preferences.dart';
 
 import 'core/network/dio_client.dart';
 import 'core/theme/app_colors.dart';
@@ -16,19 +21,39 @@ import 'presentation/blocs/weather/weather_bloc.dart';
 import 'presentation/pages/home/home_page.dart';
 
 void main() async {
-  // Preserva el splash nativo hasta que llamemos a .remove()
+  // Preserve splash
   final binding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: binding);
 
-  // ── Inicialización de dependencias ───────────────────────────────────────
+  // ── NEW: Init local storage ──────────────────────────────────────────────
+  final isarService = IsarService();
+  await isarService.init();
+
+  final prefs = await SharedPreferences.getInstance();
+  final appPrefs = AppPreferences(prefs);
+
+  // ── Existing network deps ────────────────────────────────────────────────
   final dio = DioClient().dio;
   final weatherApi = WeatherApiService(dio);
   final geocodingApi = GeocodingApiService();
 
-  final weatherRepo = WeatherRepositoryImpl(weatherApi);
-  final locationRepo = LocationRepositoryImpl(geocodingApi);
+  // ── NEW: Local data sources ──────────────────────────────────────────────
+  final weatherLocal = WeatherLocalSource(isarService);
+  final locationLocal = LocationLocalSource(isarService);
 
-  // ── Eliminar splash una vez inicializado todo ────────────────────────────
+  // ── Repositories (UPDATED only where needed) ─────────────────────────────
+  final weatherRepo = WeatherRepositoryImpl(
+    weatherApi,
+    localSource: weatherLocal, // 👈 added
+  );
+
+  final locationRepo = LocationRepositoryImpl(
+    geocodingApi,
+    // 👇 only if your impl supports it (optional)
+    // localSource: locationLocal,
+  );
+
+  // Remove splash
   FlutterNativeSplash.remove();
 
   runApp(WeatherLiteApp(weatherRepo: weatherRepo, locationRepo: locationRepo));
