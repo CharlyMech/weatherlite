@@ -13,11 +13,29 @@ enum ThemeType { light, dark, system }
 class AppColors {
   // ── Core palette ──────────────────────────────────────────────────────────
 
-  /// Primary brand / accent color (e.g. sky-blue highlight).
+  /// Primary brand / accent color.
   final String primaryColor;
 
   /// Text / icon color on top of [primaryColor] backgrounds.
   final String onPrimaryColor;
+
+  /// Secondary brand.
+  final String secondaryColor;
+
+  /// Text / icon color on top of [secondaryColor] backgrounds.
+  final String onSecondaryColor;
+
+  /// Tertiary brand.
+  final String tertiaryColor;
+
+  /// Text / icon color on top of [tertiaryColor] backgrounds.
+  final String onTertiaryColor;
+
+  /// Neutral color.
+  final String neutralColor;
+
+  /// Text / icon color on top of [neutralolor] backgrounds.
+  final String onNeutralColor;
 
   /// Main scaffold / background color.
   final String backgroundColor;
@@ -36,6 +54,9 @@ class AppColors {
   /// Success / positive status (clear skies, good AQI, etc.).
   final String colorGreen;
 
+  /// Text / icon color on top of [colorGreen] backgrounds.
+  final String onGreenColor;
+
   /// Error / critical status (storm warning, etc.).
   final String colorRed;
 
@@ -44,6 +65,9 @@ class AppColors {
 
   /// Warning status (moderate rain, haze, etc.).
   final String colorOrange;
+
+  /// Text / icon color on top of [colorOrange] backgrounds.
+  final String onOrangeColor;
 
   // ── Supporting colors ─────────────────────────────────────────────────────
 
@@ -89,14 +113,22 @@ class AppColors {
   const AppColors({
     required this.primaryColor,
     required this.onPrimaryColor,
+    required this.secondaryColor,
+    required this.onSecondaryColor,
+    required this.tertiaryColor,
+    required this.onTertiaryColor,
+    required this.neutralColor,
+    required this.onNeutralColor,
     required this.backgroundColor,
     required this.onBackgroundColor,
     required this.surfaceColor,
     required this.onSurfaceColor,
     required this.colorGreen,
+    required this.onGreenColor,
     required this.colorRed,
     required this.onRedColor,
     required this.colorOrange,
+    required this.onOrangeColor,
     required this.inactiveColor,
     required this.onInactiveColor,
     required this.outlineColor,
@@ -111,21 +143,28 @@ class AppColors {
   });
 
   /// Parses a hex color string ('#RRGGBB' or '#AARRGGBB') into a [Color].
-  Color parse(String hex) =>
-      Color(int.parse(hex.replaceFirst('#', '0xff')));
+  Color parse(String hex) => Color(int.parse(hex.replaceFirst('#', '0xff')));
 
   // ── Convenience getters (parsed) ──────────────────────────────────────────
 
   Color get primary => parse(primaryColor);
   Color get onPrimary => parse(onPrimaryColor);
+  Color get secondary => parse(secondaryColor);
+  Color get onSecondary => parse(onSecondaryColor);
+  Color get tertiary => parse(tertiaryColor);
+  Color get onTertiary => parse(onTertiaryColor);
+  Color get neutral => parse(neutralColor);
+  Color get onNeutral => parse(onNeutralColor);
   Color get background => parse(backgroundColor);
   Color get onBackground => parse(onBackgroundColor);
   Color get surface => parse(surfaceColor);
   Color get onSurface => parse(onSurfaceColor);
   Color get green => parse(colorGreen);
+  Color get onGreen => parse(onGreenColor);
   Color get red => parse(colorRed);
   Color get onRed => parse(onRedColor);
   Color get orange => parse(colorOrange);
+  Color get onOrange => parse(onOrangeColor);
   Color get inactive => parse(inactiveColor);
   Color get onInactive => parse(onInactiveColor);
   Color get outline => parse(outlineColor);
@@ -143,19 +182,28 @@ class AppColors {
 
 const Map<ThemeType, AppColors> appColorSchemes = {
   ThemeType.light: AppColors(
-    primaryColor: '#4A90D9',
-    onPrimaryColor: '#FFFFFF',
-    backgroundColor: '#EEF4FB',
-    onBackgroundColor: '#1A2A3A',
-    surfaceColor: '#FFFFFF',
-    onSurfaceColor: '#1A2A3A',
+    primaryColor: '#FFFFFF',
+    onPrimaryColor: '#1a1c1d',
+    secondaryColor: '#F5f5f7',
+    onSecondaryColor: '#1a1c1d',
+    tertiaryColor: '#e0e0e0',
+    onTertiaryColor: '#1a1c1d',
+    neutralColor: '#F9F9FB',
+    onNeutralColor: '#1a1c1d',
+    backgroundColor: '#d9dadc',
+    onBackgroundColor: '#1a1c1d',
+    surfaceColor: '#eceef0',
+    onSurfaceColor: '#1a1c1d',
     colorGreen: '#3BAE70',
-    colorRed: '#D64C4C',
+    onGreenColor: '#FFFFFF',
+    colorRed: '#ba1a1a',
     onRedColor: '#FFFFFF',
     colorOrange: '#F5A623',
-    inactiveColor: '#C8D6E5',
-    onInactiveColor: '#3A4A5A',
-    outlineColor: '#D8E4F0',
+    onOrangeColor: '#FFFFFF',
+    inactiveColor: '#747575',
+    onInactiveColor: '#ffffff',
+    outlineColor: '#777777',
+    // TODO -> Next colors
     shadowColor: '#00000033',
     skyGradientTop: '#5BA8E8',
     skyGradientBottom: '#A8D4F5',
@@ -166,19 +214,28 @@ const Map<ThemeType, AppColors> appColorSchemes = {
     cardOverlay: '#FFFFFF26',
   ),
   ThemeType.dark: AppColors(
-    primaryColor: '#5BB8F5',
+    primaryColor: '#FFFFFF',
     onPrimaryColor: '#0A1929',
-    backgroundColor: '#0A1929',
-    onBackgroundColor: '#E8F1F8',
-    surfaceColor: '#112240',
-    onSurfaceColor: '#E8F1F8',
+    secondaryColor: '#8e8e93',
+    onSecondaryColor: '#000000',
+    tertiaryColor: '#f2f2f7',
+    onTertiaryColor: '#000000',
+    neutralColor: '#1c1c1e',
+    onNeutralColor: '#e3e1e3',
+    backgroundColor: '#121214',
+    onBackgroundColor: '#e3e1e3',
+    surfaceColor: '#1f1f21',
+    onSurfaceColor: '#e3e1e3',
     colorGreen: '#4CC888',
-    colorRed: '#E05C5C',
-    onRedColor: '#FFFFFF',
+    onGreenColor: '#FFFFFF',
+    colorRed: '#ffb4ab',
+    onRedColor: '#690005',
     colorOrange: '#FFAB40',
-    inactiveColor: '#1E3A5F',
-    onInactiveColor: '#A0BDD4',
-    outlineColor: '#1E3A5F',
+    onOrangeColor: '#FFFFFF',
+    inactiveColor: '#8d8f94',
+    onInactiveColor: '#000000',
+    outlineColor: '#474747',
+    // TODO -> Next color
     shadowColor: '#000000',
     skyGradientTop: '#0D2137',
     skyGradientBottom: '#1A4A7A',
