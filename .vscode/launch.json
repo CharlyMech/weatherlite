@@ -5,6 +5,14 @@
       "name": "weatherlite",
       "request": "launch",
       "type": "dart"
+    },
+    {
+      "name": "weatherlite (debug)",
+      "request": "launch",
+      "type": "dart",
+      "args": [
+        "--dart-define=LAUNCH_MODE=debug"
+      ]
     }
   ]
 }
