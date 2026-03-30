@@ -1,8 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:weatherlite/data/sources/local/location_local_source.dart';
+import 'package:weatherlite/core/debug/debug_destroyer.dart';
 import 'package:weatherlite/data/sources/local/weather_local_source.dart';
 import 'package:weatherlite/storage/isar/services/isar_service.dart';
 import 'package:weatherlite/storage/preferences/app_preferences.dart';
@@ -16,75 +17,108 @@ import 'data/repositories/location_repository_impl.dart';
 import 'data/repositories/weather_repository_impl.dart';
 import 'presentation/blocs/location/locations_bloc.dart';
 import 'presentation/blocs/location/locations_event.dart';
+import 'presentation/blocs/splash/splash_cubit.dart';
 import 'presentation/blocs/theme/theme_cubit.dart';
 import 'presentation/blocs/weather/weather_bloc.dart';
-import 'presentation/pages/home/home_page.dart';
+import 'presentation/pages/splash/splash_page.dart';
 
 void main() async {
-  // Preserve splash
+  // Preserve native splash
   final binding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: binding);
 
-  // ── NEW: Init local storage ──────────────────────────────────────────────
+  // ── Init local storage (parallel) ───────────────────────────────────────
   final isarService = IsarService();
-  await isarService.init();
+  final results = await Future.wait([
+    isarService.init(),
+    SharedPreferences.getInstance(),
+  ]);
 
-  final prefs = await SharedPreferences.getInstance();
+  final prefs = results[1] as SharedPreferences;
   final appPrefs = AppPreferences(prefs);
 
-  // ── Existing network deps ────────────────────────────────────────────────
+  // ── Debug data reset ────────────────────────────────────────────────────
+  if (DebugDestroyer.isDebugReset) {
+    await DebugDestroyer(isarService: isarService, prefs: prefs).destroyAll();
+  }
+
+  // ── Debug delay so dev can see native splash ────────────────────────────
+  if (kDebugMode) {
+    await Future.delayed(const Duration(seconds: 1));
+  }
+
+  // ── Network deps ────────────────────────────────────────────────────────
   final dio = DioClient().dio;
   final weatherApi = WeatherApiService(dio);
   final geocodingApi = GeocodingApiService();
 
-  // ── NEW: Local data sources ──────────────────────────────────────────────
+  // ── Local data sources ──────────────────────────────────────────────────
   final weatherLocal = WeatherLocalSource(isarService);
-  final locationLocal = LocationLocalSource(isarService);
 
-  // ── Repositories (UPDATED only where needed) ─────────────────────────────
+  // ── Repositories ────────────────────────────────────────────────────────
   final weatherRepo = WeatherRepositoryImpl(
     weatherApi,
-    localSource: weatherLocal, // 👈 added
+    localSource: weatherLocal,
   );
 
-  final locationRepo = LocationRepositoryImpl(
-    geocodingApi,
-    // 👇 only if your impl supports it (optional)
-    // localSource: locationLocal,
-  );
+  final locationRepo = LocationRepositoryImpl(geocodingApi);
 
-  // Remove splash
+  // Remove native splash
   FlutterNativeSplash.remove();
 
-  runApp(WeatherLiteApp(weatherRepo: weatherRepo, locationRepo: locationRepo));
+  runApp(WeatherLiteApp(
+    weatherRepo: weatherRepo,
+    locationRepo: locationRepo,
+    appPrefs: appPrefs,
+    isarService: isarService,
+  ));
 }
 
 class WeatherLiteApp extends StatelessWidget {
   final WeatherRepositoryImpl weatherRepo;
   final LocationRepositoryImpl locationRepo;
+  final AppPreferences appPrefs;
+  final IsarService isarService;
 
   const WeatherLiteApp({
     super.key,
     required this.weatherRepo,
     required this.locationRepo,
+    required this.appPrefs,
+    required this.isarService,
   });
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
+    return MultiRepositoryProvider(
       providers: [
-        BlocProvider(create: (_) => ThemeCubit()),
-        BlocProvider(create: (_) => WeatherBloc(weatherRepo)),
-        BlocProvider(
-          create: (_) => LocationsBloc(locationRepo)..add(LoadLocations()),
-        ),
+        RepositoryProvider.value(value: appPrefs),
+        RepositoryProvider.value(value: isarService),
+        RepositoryProvider.value(value: locationRepo),
+        RepositoryProvider.value(value: weatherRepo),
       ],
-      child: BlocBuilder<ThemeCubit, ThemeType>(
-        builder: (context, themeType) => MaterialApp(
-          title: 'WeatherLite',
-          debugShowCheckedModeBanner: false,
-          theme: appColorSchemes[themeType]!.toThemeData(),
-          home: const HomePage(),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => ThemeCubit()),
+          BlocProvider(create: (_) => WeatherBloc(weatherRepo)),
+          BlocProvider(
+            create: (_) => LocationsBloc(locationRepo)..add(LoadLocations()),
+          ),
+          BlocProvider(
+            create: (_) => SplashCubit(
+              appPrefs: appPrefs,
+              weatherRepo: weatherRepo,
+              locationRepo: locationRepo,
+            ),
+          ),
+        ],
+        child: BlocBuilder<ThemeCubit, ThemeType>(
+          builder: (context, themeType) => MaterialApp(
+            title: 'WeatherLite',
+            debugShowCheckedModeBanner: false,
+            theme: appColorSchemes[themeType]!.toThemeData(),
+            home: const SplashPage(),
+          ),
         ),
       ),
     );
