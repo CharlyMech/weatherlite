@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:weatherlite/presentation/blocs/location/locations_bloc.dart';
 import 'package:weatherlite/presentation/blocs/location/locations_state.dart';
 
+import 'package:weatherlite/core/debug/debug_panel.dart';
 import '../../../domain/entities/location_entity.dart';
 import '../../blocs/weather/weather_bloc.dart';
 import '../../blocs/weather/weather_event.dart';
@@ -38,6 +39,8 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: const DebugPanel(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SafeArea(
         child: BlocBuilder<LocationsBloc, LocationsState>(
           builder: (context, state) {
