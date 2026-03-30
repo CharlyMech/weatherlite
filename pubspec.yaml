@@ -28,6 +28,7 @@ dependencies:
    flutter_native_splash: ^2.4.5
    iconoir_flutter: ^7.11.0
    flutter_launcher_icons: ^0.14.4
+   package_info_plus: ^8.2.1
 
 dev_dependencies:
    flutter_test:
@@ -38,6 +39,9 @@ dev_dependencies:
 
 flutter:
    uses-material-design: true
+   assets:
+      - assets/splash/
+      - assets/icon/
 
 # ── flutter_native_splash ─────────────────────────────────────────────────
 # Ejecutar después de cambios: dart run flutter_native_splash:create
