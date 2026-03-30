@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:weatherlite/core/theme/app_colors.dart';
+import 'package:weatherlite/core/theme/app_colors_extension.dart';
 
 /// Extension on [AppColors] that converts the custom color definition into
 /// Flutter's [ThemeData], ready to be passed to [MaterialApp.theme].
@@ -151,6 +152,26 @@ extension AppColorsToThemeData on AppColors {
       ),
       dividerTheme: DividerThemeData(color: outline, thickness: 1),
       iconTheme: IconThemeData(color: parse(onBackgroundColor)),
+      // ── Theme extensions ──────────────────────────────────────────────
+      extensions: [
+        AppColorsExtension(
+          skyGradientTop: skyTop,
+          skyGradientBottom: skyBottom,
+          rainTint: rain,
+          snowTint: snow,
+          sunTint: sun,
+          nightTint: night,
+          cardOverlay: card,
+          inactive: inactive,
+          onInactive: onInactive,
+          outline: outline,
+          shadow: shadow,
+          green: green,
+          onGreen: onGreen,
+          orange: orange,
+          onOrange: onOrange,
+        ),
+      ],
     );
   }
 }
