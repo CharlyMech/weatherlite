@@ -5,6 +5,7 @@ class AppPreferences {
   static const _keySelectedLocation = "selected_location_id";
   static const _keyThemeMode = "theme_mode";
   static const _keyLocale = "locale";
+  static const _keyHasLaunched = "has_launched";
 
   final SharedPreferences _prefs;
 
@@ -28,4 +29,8 @@ class AppPreferences {
   // Locale
   String get locale => _prefs.getString(_keyLocale) ?? "en";
   Future<void> setLocale(String locale) => _prefs.setString(_keyLocale, locale);
+
+  // First launch detection
+  bool get hasLaunched => _prefs.getBool(_keyHasLaunched) ?? false;
+  Future<void> setHasLaunched() => _prefs.setBool(_keyHasLaunched, true);
 }
