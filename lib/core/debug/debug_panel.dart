@@ -42,17 +42,18 @@ class _DebugFab extends StatelessWidget {
   }
 
   void _showPanel(BuildContext context) {
+    final isar = RepositoryProvider.of<IsarService>(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => _DebugSheet(parentContext: context),
+      builder: (_) => _DebugSheet(isarService: isar),
     );
   }
 }
 
 class _DebugSheet extends StatefulWidget {
-  final BuildContext parentContext;
-  const _DebugSheet({required this.parentContext});
+  final IsarService isarService;
+  const _DebugSheet({required this.isarService});
 
   @override
   State<_DebugSheet> createState() => _DebugSheetState();
@@ -61,9 +62,6 @@ class _DebugSheet extends StatefulWidget {
 class _DebugSheetState extends State<_DebugSheet> {
   bool _busy = false;
   String? _lastAction;
-
-  IsarService get _isar =>
-      RepositoryProvider.of<IsarService>(widget.parentContext);
 
   Future<void> _run(String label, Future<void> Function() action) async {
     setState(() {
@@ -82,7 +80,7 @@ class _DebugSheetState extends State<_DebugSheet> {
 
   Future<DebugDestroyer> _destroyer() async {
     final prefs = await SharedPreferences.getInstance();
-    return DebugDestroyer(isarService: _isar, prefs: prefs);
+    return DebugDestroyer(isarService: widget.isarService, prefs: prefs);
   }
 
   @override

@@ -16,11 +16,12 @@ class DebugDestroyer {
   }) : _isarService = isarService,
        _prefs = prefs;
 
+  /// Wipes all data. Restart the app manually afterwards.
   Future<void> destroyAll() async {
     if (!kDebugMode) return;
     debugPrint('[DebugDestroyer] Wiping all data...');
     await Future.wait([clearIsar(), clearPreferences()]);
-    debugPrint('[DebugDestroyer] Done.');
+    debugPrint('[DebugDestroyer] Done. Restart the app to continue.');
   }
 
   Future<void> clearIsar() async {
