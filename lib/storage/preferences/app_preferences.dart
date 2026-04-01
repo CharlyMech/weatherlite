@@ -6,6 +6,7 @@ class AppPreferences {
   static const _keyThemeMode = "theme_mode";
   static const _keyLocale = "locale";
   static const _keyHasLaunched = "has_launched";
+  static const _keyLocationPermissionGranted = "location_permission_granted";
 
   final SharedPreferences _prefs;
 
@@ -33,4 +34,20 @@ class AppPreferences {
   // First launch detection
   bool get hasLaunched => _prefs.getBool(_keyHasLaunched) ?? false;
   Future<void> setHasLaunched() => _prefs.setBool(_keyHasLaunched, true);
+
+  // Location permission granted
+  bool get locationPermissionGranted =>
+      _prefs.getBool(_keyLocationPermissionGranted) ?? false;
+  Future<void> setLocationPermissionGranted(bool granted) =>
+      _prefs.setBool(_keyLocationPermissionGranted, granted);
+
+  // Whether the user granted only "while in use" (needs re-request each launch)
+  static const _keyLocationWhileInUse = "location_while_in_use";
+  bool get locationIsWhileInUse =>
+      _prefs.getBool(_keyLocationWhileInUse) ?? false;
+  Future<void> setLocationWhileInUse(bool whileInUse) =>
+      _prefs.setBool(_keyLocationWhileInUse, whileInUse);
+
+  // Logout — resets has_launched so onboarding shows again
+  Future<void> resetForLogout() => _prefs.setBool(_keyHasLaunched, false);
 }
