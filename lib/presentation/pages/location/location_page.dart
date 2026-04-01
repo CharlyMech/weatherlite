@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:weatherlite/presentation/blocs/location/locations_bloc.dart';
 import 'package:weatherlite/presentation/blocs/location/locations_event.dart';
 import 'package:weatherlite/presentation/blocs/location/locations_state.dart';
+import 'package:weatherlite/presentation/widgets/common/adaptive_back_button.dart';
 
 class LocationPage extends StatefulWidget {
   const LocationPage({super.key});
@@ -39,13 +41,14 @@ class _LocationPageState extends State<LocationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: const AdaptiveBackButton(),
         title: const Text("Add City"),
         actions: [
           IconButton(
             icon: const Icon(Icons.my_location),
             onPressed: () {
               context.read<LocationsBloc>().add(DetectCurrentLocation());
-              Navigator.pop(context);
+              context.pop();
             },
           ),
         ],
@@ -110,7 +113,7 @@ class _LocationPageState extends State<LocationPage> {
                         context.read<LocationsBloc>().add(
                           AddLocation(location),
                         );
-                        Navigator.pop(context);
+                        context.pop();
                       },
                     );
                   },
