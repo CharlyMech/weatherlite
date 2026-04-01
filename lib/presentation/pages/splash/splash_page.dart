@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:weatherlite/core/router/app_router.dart';
 import 'package:weatherlite/core/utils/weather_code_utils.dart';
 import 'package:weatherlite/presentation/blocs/splash/splash_cubit.dart';
 import 'package:weatherlite/presentation/blocs/splash/splash_state.dart';
-import 'package:weatherlite/presentation/pages/home/home_page.dart';
-import 'package:weatherlite/presentation/pages/onboarding/onboarding_page.dart';
 import 'package:weatherlite/core/debug/debug_panel.dart';
 import 'package:weatherlite/presentation/widgets/common/animated_dots_loader.dart';
 
@@ -48,13 +48,11 @@ class _SplashPageState extends State<SplashPage> {
     final state = context.read<SplashCubit>().state;
     if (!state.isReady || !_minTimeElapsed) return;
 
-    final destination = state.isFirstLaunch
-        ? const OnboardingPage()
-        : const HomePage();
-
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => destination));
+    if (state.isFirstLaunch) {
+      context.go(AppRoutes.onboarding);
+    } else {
+      context.go(AppRoutes.home);
+    }
   }
 
   @override
@@ -82,10 +80,10 @@ class _SplashPageState extends State<SplashPage> {
                   Container(color: Theme.of(context).scaffoldBackgroundColor),
             ),
             // Content overlay
-            SafeArea(
+            Positioned.fill(
               child: Column(
                 children: [
-                  const SizedBox(height: 48),
+                  SizedBox(height: 48 + MediaQuery.of(context).padding.top),
                   // ── Weather brief (top) ─────────────────────────────────
                   BlocBuilder<SplashCubit, SplashState>(
                     buildWhen: (prev, curr) =>

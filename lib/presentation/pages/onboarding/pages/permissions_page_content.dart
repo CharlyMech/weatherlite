@@ -1,10 +1,25 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:weatherlite/presentation/blocs/onboarding/onboarding_cubit.dart';
 import 'package:weatherlite/presentation/blocs/onboarding/onboarding_state.dart';
 
-class PermissionsPageContent extends StatelessWidget {
+class PermissionsPageContent extends StatefulWidget {
   const PermissionsPageContent({super.key});
+
+  @override
+  State<PermissionsPageContent> createState() => _PermissionsPageContentState();
+}
+
+class _PermissionsPageContentState extends State<PermissionsPageContent> {
+  bool _pending = false;
+
+  Future<void> _requestPermission() async {
+    if (_pending) return;
+    setState(() => _pending = true);
+    await context.read<OnboardingCubit>().requestLocationPermission();
+    if (mounted) setState(() => _pending = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,33 +56,32 @@ class PermissionsPageContent extends StatelessWidget {
             buildWhen: (prev, curr) =>
                 prev.locationGranted != curr.locationGranted,
             builder: (context, state) {
-              if (state.locationGranted) {
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.check_circle, color: Colors.greenAccent),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Location enabled',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.greenAccent,
-                          ),
+              final granted = state.locationGranted;
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Allow Location',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: granted ? Colors.greenAccent : Colors.white,
+                        ),
+                  ),
+                  const SizedBox(width: 12),
+                  if (_pending)
+                    const SizedBox(
+                      width: 51,
+                      height: 31,
+                      child: Center(
+                        child: CupertinoActivityIndicator(color: Colors.white),
+                      ),
+                    )
+                  else
+                    CupertinoSwitch(
+                      value: granted,
+                      activeTrackColor: Colors.greenAccent,
+                      onChanged: granted ? null : (_) => _requestPermission(),
                     ),
-                  ],
-                );
-              }
-              return FilledButton.icon(
-                onPressed: () {
-                  context.read<OnboardingCubit>().requestLocationPermission();
-                },
-                icon: const Icon(Icons.location_on),
-                label: const Text('Allow Location'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black87,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                ),
+                ],
               );
             },
           ),

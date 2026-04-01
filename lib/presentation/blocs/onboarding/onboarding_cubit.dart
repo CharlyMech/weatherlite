@@ -2,7 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:weatherlite/data/repositories/location_repository_impl.dart';
 import 'package:weatherlite/data/repositories/weather_repository_impl.dart';
-import 'package:weatherlite/domain/entities/location_entity.dart';
 import 'package:weatherlite/storage/preferences/app_preferences.dart';
 import 'package:weatherlite/presentation/blocs/onboarding/onboarding_state.dart';
 
@@ -46,29 +45,20 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       }
       if (permission == LocationPermission.deniedForever) return;
 
-      // Permission granted — get position and save location
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.low,
-        ),
+      // Remember if user chose "while in use" so we re-request each launch
+      await _appPrefs.setLocationWhileInUse(
+        permission == LocationPermission.whileInUse,
       );
+      await _appPrefs.setLocationPermissionGranted(true);
 
-      final location = LocationEntity(
-        id: 'current_location',
-        name: 'My Location',
-        country: '',
-        lat: position.latitude,
-        lon: position.longitude,
-        isCurrentLocation: true,
-        order: -1,
-      );
-
+      // Permission granted — get position and save location with real name
+      final location = await _locationRepo.getCurrentLocation();
       await _locationRepo.saveLocation(location);
 
       // Pre-fetch weather so HomePage has it cached
       try {
         await _weatherRepo
-            .getWeather(position.latitude, position.longitude)
+            .getWeather(location.lat, location.lon)
             .timeout(const Duration(seconds: 5));
       } catch (_) {}
 

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:weatherlite/core/router/app_router.dart';
 import 'package:weatherlite/data/repositories/location_repository_impl.dart';
 import 'package:weatherlite/data/repositories/weather_repository_impl.dart';
 import 'package:weatherlite/presentation/blocs/location/locations_bloc.dart';
 import 'package:weatherlite/presentation/blocs/location/locations_event.dart';
 import 'package:weatherlite/presentation/blocs/onboarding/onboarding_cubit.dart';
 import 'package:weatherlite/presentation/blocs/onboarding/onboarding_state.dart';
-import 'package:weatherlite/presentation/pages/home/home_page.dart';
 import 'package:weatherlite/presentation/pages/onboarding/pages/customization_page_content.dart';
 import 'package:weatherlite/presentation/pages/onboarding/pages/get_started_page_content.dart';
 import 'package:weatherlite/presentation/pages/onboarding/pages/permissions_page_content.dart';
@@ -56,9 +57,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         listenWhen: (prev, curr) => !prev.isComplete && curr.isComplete,
         listener: (context, state) {
           context.read<LocationsBloc>().add(LoadLocations());
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomePage()),
-          );
+          context.go(AppRoutes.home);
         },
         child: Scaffold(
           body: Stack(
@@ -69,13 +68,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 bgImage,
                 fit: BoxFit.cover,
                 errorBuilder: (_, e, st) => Container(
-                  color: isDark
-                      ? const Color(0xFF121214)
-                      : const Color(0xFFD9DADC),
+                  color: Theme.of(context).colorScheme.surface,
                 ),
               ),
               // Content
-              SafeArea(
+              Positioned.fill(
                 child: Column(
                   children: [
                     // ── Top nav row ───────────────────────────────────────
@@ -170,7 +167,7 @@ class _TopNavRow extends StatelessWidget {
                     child: Text(
                       'Skip',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ),
@@ -188,7 +185,7 @@ class _TopNavRow extends StatelessWidget {
                     child: Text(
                       'Next',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
                       ),
                     ),
                   ),
