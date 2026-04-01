@@ -107,9 +107,6 @@ class AppColors {
   /// Color for night-mode sky / moon elements.
   final String nightTint;
 
-  /// Subtle card overlay / glass-morphism tint.
-  final String cardOverlay;
-
   const AppColors({
     required this.primaryColor,
     required this.onPrimaryColor,
@@ -139,7 +136,6 @@ class AppColors {
     required this.snowTint,
     required this.sunTint,
     required this.nightTint,
-    required this.cardOverlay,
   });
 
   /// Parses a hex color string ('#RRGGBB' or '#AARRGGBB') into a [Color].
@@ -175,7 +171,6 @@ class AppColors {
   Color get snow => parse(snowTint);
   Color get sun => parse(sunTint);
   Color get night => parse(nightTint);
-  Color get card => parse(cardOverlay);
 }
 
 // ── Pre-configured themes ──────────────────────────────────────────────────
@@ -203,15 +198,13 @@ const Map<ThemeType, AppColors> appColorSchemes = {
     inactiveColor: '#747575',
     onInactiveColor: '#ffffff',
     outlineColor: '#777777',
-    // TODO -> Next colors
     shadowColor: '#00000033',
-    skyGradientTop: '#5BA8E8',
-    skyGradientBottom: '#A8D4F5',
-    rainTint: '#5B9FD4',
-    snowTint: '#D4EAF7',
+    skyGradientTop: '#89b4d8',
+    skyGradientBottom: '#c8dff0',
+    rainTint: '#7a9eb8',
+    snowTint: '#ccdde8',
     sunTint: '#FFD166',
-    nightTint: '#1A2F5E',
-    cardOverlay: '#FFFFFF26',
+    nightTint: '#1e2a3a',
   ),
   ThemeType.dark: AppColors(
     primaryColor: '#FFFFFF',
@@ -235,14 +228,12 @@ const Map<ThemeType, AppColors> appColorSchemes = {
     inactiveColor: '#8d8f94',
     onInactiveColor: '#000000',
     outlineColor: '#474747',
-    // TODO -> Next color
     shadowColor: '#000000',
-    skyGradientTop: '#0D2137',
-    skyGradientBottom: '#1A4A7A',
-    rainTint: '#3A7CB8',
-    snowTint: '#B8D8EF',
+    skyGradientTop: '#1c2b3a',
+    skyGradientBottom: '#2a3d52',
+    rainTint: '#1e2e3e',
+    snowTint: '#2a3a4a',
     sunTint: '#FFD166',
-    nightTint: '#050D1A',
-    cardOverlay: '#FFFFFF0D',
+    nightTint: '#0d1117',
   ),
 };
