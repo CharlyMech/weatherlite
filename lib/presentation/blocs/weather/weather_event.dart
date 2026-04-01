@@ -8,3 +8,5 @@ class FetchWeather extends WeatherEvent {
 }
 
 class RefreshWeather extends WeatherEvent {}
+
+class ForceRefreshWeather extends WeatherEvent {}

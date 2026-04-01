@@ -14,4 +14,8 @@ class WeatherLocalSource {
   Future<void> cacheWeather(String locationId, Weather weather) {
     return isarService.putWeatherCache(locationId, weather);
   }
+
+  Future<void> clearCacheForLocation(String locationId) {
+    return isarService.deleteWeatherCache(locationId);
+  }
 }

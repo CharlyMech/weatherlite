@@ -108,6 +108,18 @@ class IsarService {
     });
   }
 
+  Future<void> deleteWeatherCache(String locationId) async {
+    await isar.writeTxn(() async {
+      final existing = await isar.weatherCacheModels
+          .where()
+          .locationIdEqualTo(locationId)
+          .findFirst();
+      if (existing != null) {
+        await isar.weatherCacheModels.delete(existing.isarId);
+      }
+    });
+  }
+
   Future<Weather?> getWeatherCache(String locationId) async {
     final model = await isar.weatherCacheModels
         .where()

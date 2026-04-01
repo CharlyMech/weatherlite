@@ -31,4 +31,10 @@ class WeatherRepositoryImpl implements WeatherRepository {
 
     return weather;
   }
+
+  @override
+  Future<void> clearCache(double lat, double lon) async {
+    final locationId = "${lat}_$lon";
+    await localSource?.clearCacheForLocation(locationId);
+  }
 }
