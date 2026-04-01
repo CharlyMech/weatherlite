@@ -1,14 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:weatherlite/core/debug/debug_destroyer.dart';
+import 'package:weatherlite/data/sources/local/location_local_source.dart';
 import 'package:weatherlite/data/sources/local/weather_local_source.dart';
 import 'package:weatherlite/storage/isar/services/isar_service.dart';
 import 'package:weatherlite/storage/preferences/app_preferences.dart';
 
 import 'core/network/dio_client.dart';
+import 'core/router/app_router.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'data/sources/remote/geocoding_api_service.dart';
@@ -20,12 +23,22 @@ import 'presentation/blocs/location/locations_event.dart';
 import 'presentation/blocs/splash/splash_cubit.dart';
 import 'presentation/blocs/theme/theme_cubit.dart';
 import 'presentation/blocs/weather/weather_bloc.dart';
-import 'presentation/pages/splash/splash_page.dart';
+import 'presentation/blocs/widget_layout/widget_layout_bloc.dart';
 
 void main() async {
   // Preserve native splash
   final binding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: binding);
+
+  // Edge-to-edge on Android
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarDividerColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
 
   // ── Init local storage (parallel) ───────────────────────────────────────
   final isarService = IsarService();
@@ -54,6 +67,7 @@ void main() async {
 
   // ── Local data sources ──────────────────────────────────────────────────
   final weatherLocal = WeatherLocalSource(isarService);
+  final locationLocal = LocationLocalSource(isarService);
 
   // ── Repositories ────────────────────────────────────────────────────────
   final weatherRepo = WeatherRepositoryImpl(
@@ -61,7 +75,10 @@ void main() async {
     localSource: weatherLocal,
   );
 
-  final locationRepo = LocationRepositoryImpl(geocodingApi);
+  final locationRepo = LocationRepositoryImpl(
+    geocodingApi,
+    localSource: locationLocal,
+  );
 
   // Remove native splash
   FlutterNativeSplash.remove();
@@ -111,13 +128,16 @@ class WeatherLiteApp extends StatelessWidget {
               locationRepo: locationRepo,
             ),
           ),
+          BlocProvider(
+            create: (_) => WidgetLayoutBloc(isarService: isarService),
+          ),
         ],
         child: BlocBuilder<ThemeCubit, ThemeType>(
-          builder: (context, themeType) => MaterialApp(
+          builder: (context, themeType) => MaterialApp.router(
             title: 'WeatherLite',
             debugShowCheckedModeBanner: false,
             theme: appColorSchemes[themeType]!.toThemeData(),
-            home: const SplashPage(),
+            routerConfig: appRouter,
           ),
         ),
       ),
