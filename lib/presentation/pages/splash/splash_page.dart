@@ -19,6 +19,7 @@ class SplashPage extends StatefulWidget {
 class _SplashPageState extends State<SplashPage> {
   String _appVersion = '';
   bool _minTimeElapsed = false;
+  bool _navigated = false;
 
   @override
   void initState() {
@@ -45,8 +46,10 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   void _tryNavigate() {
+    if (_navigated) return;
     final state = context.read<SplashCubit>().state;
     if (!state.isReady || !_minTimeElapsed) return;
+    _navigated = true;
 
     if (state.isFirstLaunch) {
       context.go(AppRoutes.onboarding);
