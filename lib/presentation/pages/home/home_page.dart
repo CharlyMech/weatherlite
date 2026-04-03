@@ -82,15 +82,17 @@ class _HomePageState extends State<HomePage> {
                 return Stack(
                   children: [
                     // City pages — full screen
-                    PageView.builder(
-                      controller: _pageController,
-                      itemCount: locations.length,
-                      onPageChanged: (i) => _onPageChanged(i, locations),
-                      itemBuilder: (context, index) {
-                        return CityWeatherPage(
-                          location: locations[index],
-                        );
-                      },
+                    Positioned.fill(
+                      child: PageView.builder(
+                        controller: _pageController,
+                        itemCount: locations.length,
+                        onPageChanged: (i) => _onPageChanged(i, locations),
+                        itemBuilder: (context, index) {
+                          return CityWeatherPage(
+                            location: locations[index],
+                          );
+                        },
+                      ),
                     ),
 
                     // Transparent top overlay: indicator + edit button

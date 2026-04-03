@@ -7,6 +7,7 @@ import 'package:weatherlite/core/router/app_router.dart';
 import 'package:weatherlite/core/theme/app_colors.dart';
 import 'package:weatherlite/presentation/blocs/settings/settings_cubit.dart';
 import 'package:weatherlite/presentation/blocs/theme/theme_cubit.dart';
+import 'package:weatherlite/storage/isar/services/isar_service.dart';
 import 'package:weatherlite/storage/preferences/app_preferences.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -17,6 +18,7 @@ class SettingsPage extends StatelessWidget {
     return BlocProvider(
       create: (_) => SettingsCubit(
         appPrefs: context.read<AppPreferences>(),
+        isarService: context.read<IsarService>(),
       ),
       child: const _SettingsView(),
     );
@@ -78,6 +80,49 @@ class _SettingsView extends StatelessWidget {
                 onSelectionChanged: (value) {
                   context.read<ThemeCubit>().setTheme(value.first);
                 },
+              ),
+
+              const SizedBox(height: 32),
+
+              // Navbar collapse behavior
+              _SectionHeader(title: 'Navigation Bar'),
+              const SizedBox(height: 8),
+              SegmentedButton<NavbarCollapseBehavior>(
+                segments: const [
+                  ButtonSegment(
+                    value: NavbarCollapseBehavior.never,
+                    label: Text('Always Open'),
+                  ),
+                  ButtonSegment(
+                    value: NavbarCollapseBehavior.onExternalTouch,
+                    label: Text('Auto Close'),
+                  ),
+                  ButtonSegment(
+                    value: NavbarCollapseBehavior.manual,
+                    label: Text('Manual'),
+                  ),
+                ],
+                selected: {state.navbarCollapseBehavior},
+                onSelectionChanged: (value) {
+                  context
+                      .read<SettingsCubit>()
+                      .setNavbarCollapseBehavior(value.first);
+                },
+              ),
+              const SizedBox(height: 4),
+              Text(
+                state.navbarCollapseBehavior == NavbarCollapseBehavior.never
+                    ? 'Navigation bar stays open at all times.'
+                    : state.navbarCollapseBehavior ==
+                            NavbarCollapseBehavior.onExternalTouch
+                        ? 'Closes when you interact outside the bar.'
+                        : 'Tap the menu icon to open and close.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.5),
+                    ),
               ),
 
               const SizedBox(height: 32),
