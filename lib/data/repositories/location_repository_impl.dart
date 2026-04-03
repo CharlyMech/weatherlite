@@ -1,3 +1,4 @@
+import 'package:geocoding/geocoding.dart' as native_geocoding;
 import 'package:geolocator/geolocator.dart';
 import 'package:weatherlite/core/errors/exceptions.dart';
 import 'package:weatherlite/data/mappers/location_mapper.dart';
@@ -48,16 +49,52 @@ class LocationRepositoryImpl implements LocationRepository {
         ),
       );
 
-      // Try to get real city name via reverse geocoding
-      final place = await geocodingApi
-          .reverseGeocode(position.latitude, position.longitude)
-          .timeout(const Duration(seconds: 4))
-          .catchError((_) => null);
+      // Resolve city name: try native platform geocoder first, fallback to Nominatim
+      String resolvedName = "My Location";
+      String resolvedCountry = "";
+      bool resolved = false;
+
+      // Strategy 1: Native platform geocoder
+      try {
+        final placemarks = await native_geocoding
+            .placemarkFromCoordinates(position.latitude, position.longitude)
+            .timeout(const Duration(seconds: 4));
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          final city = (p.locality?.isNotEmpty == true)
+              ? p.locality
+              : (p.subAdministrativeArea?.isNotEmpty == true)
+                  ? p.subAdministrativeArea
+                  : p.administrativeArea;
+          if (city != null && city.isNotEmpty) {
+            resolvedName = city;
+            resolvedCountry = p.isoCountryCode ?? p.country ?? "";
+            resolved = true;
+          }
+        }
+      } catch (_) {
+        // Native geocoder failed — will try Nominatim below
+      }
+
+      // Strategy 2: Nominatim reverse geocoding (fallback)
+      if (!resolved) {
+        try {
+          final place = await geocodingApi
+              .reverseGeocode(position.latitude, position.longitude)
+              .timeout(const Duration(seconds: 4));
+          if (place != null) {
+            resolvedName = place.city;
+            resolvedCountry = place.country;
+          }
+        } catch (_) {
+          // Both geocoding strategies failed — keep default "My Location"
+        }
+      }
 
       return LocationEntity(
         id: "current_location",
-        name: place?.city ?? "My Location",
-        country: place?.country ?? "",
+        name: resolvedName,
+        country: resolvedCountry,
         lat: position.latitude,
         lon: position.longitude,
         isCurrentLocation: true,
