@@ -52,11 +52,16 @@ class _OnboardingPageState extends State<OnboardingPage> {
         appPrefs: context.read<AppPreferences>(),
         locationRepo: context.read<LocationRepositoryImpl>(),
         weatherRepo: context.read<WeatherRepositoryImpl>(),
-      ),
+      )..initPermissionState(),
       child: BlocListener<OnboardingCubit, OnboardingState>(
         listenWhen: (prev, curr) => !prev.isComplete && curr.isComplete,
         listener: (context, state) {
-          context.read<LocationsBloc>().add(LoadLocations());
+          final locBloc = context.read<LocationsBloc>();
+          if (state.locationGranted) {
+            // Ensure current location is detected and saved before loading
+            locBloc.add(DetectCurrentLocation());
+          }
+          locBloc.add(LoadLocations());
           context.go(AppRoutes.home);
         },
         child: Scaffold(
@@ -153,7 +158,12 @@ class _TopNavRow extends StatelessWidget {
         final isLastPage = state.currentPage == state.totalPages - 1;
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: EdgeInsets.only(
+            left: 8,
+            right: 8,
+            top: MediaQuery.of(context).padding.top + 4,
+            bottom: 4,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

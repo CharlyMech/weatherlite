@@ -33,6 +33,17 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     emit(state.copyWith(currentPage: state.totalPages - 1));
   }
 
+  Future<void> initPermissionState() async {
+    try {
+      final permission = await Geolocator.checkPermission();
+      final alreadyGranted = permission == LocationPermission.always ||
+          permission == LocationPermission.whileInUse;
+      if (alreadyGranted) {
+        emit(state.copyWith(locationGranted: true));
+      }
+    } catch (_) {}
+  }
+
   Future<void> requestLocationPermission() async {
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
