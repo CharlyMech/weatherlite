@@ -1,5 +1,17 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// How the floating navbar collapses.
+enum NavbarCollapseBehavior {
+  /// Never collapses — close icon is hidden.
+  never,
+
+  /// Collapses when the user interacts outside the navbar (scroll, tap, etc.).
+  onExternalTouch,
+
+  /// Manual click to open/close (default).
+  manual,
+}
+
 class AppPreferences {
   static const _keyTempUnit = "temperature_unit";
   static const _keySelectedLocation = "selected_location_id";
@@ -7,6 +19,7 @@ class AppPreferences {
   static const _keyLocale = "locale";
   static const _keyHasLaunched = "has_launched";
   static const _keyLocationPermissionGranted = "location_permission_granted";
+  static const _keyNavbarCollapseBehavior = "navbar_collapse_behavior";
 
   final SharedPreferences _prefs;
 
@@ -41,6 +54,18 @@ class AppPreferences {
   Future<void> setLocationPermissionGranted(bool granted) =>
       _prefs.setBool(_keyLocationPermissionGranted, granted);
 
+  // Navbar collapse behavior
+  NavbarCollapseBehavior get navbarCollapseBehavior {
+    final value = _prefs.getString(_keyNavbarCollapseBehavior);
+    return NavbarCollapseBehavior.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => NavbarCollapseBehavior.manual,
+    );
+  }
+
+  Future<void> setNavbarCollapseBehavior(NavbarCollapseBehavior behavior) =>
+      _prefs.setString(_keyNavbarCollapseBehavior, behavior.name);
+
   // Whether the user granted only "while in use" (needs re-request each launch)
   static const _keyLocationWhileInUse = "location_while_in_use";
   bool get locationIsWhileInUse =>
@@ -48,6 +73,10 @@ class AppPreferences {
   Future<void> setLocationWhileInUse(bool whileInUse) =>
       _prefs.setBool(_keyLocationWhileInUse, whileInUse);
 
-  // Logout — resets has_launched so onboarding shows again
-  Future<void> resetForLogout() => _prefs.setBool(_keyHasLaunched, false);
+  // Logout — resets onboarding flag and clears permission state
+  Future<void> resetForLogout() async {
+    await _prefs.setBool(_keyHasLaunched, false);
+    await _prefs.setBool(_keyLocationPermissionGranted, false);
+    await _prefs.setBool(_keyLocationWhileInUse, false);
+  }
 }

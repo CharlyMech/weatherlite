@@ -3,35 +3,52 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:iconoir_flutter/regular/home.dart' as iconoir_home;
 import 'package:iconoir_flutter/regular/map.dart' as iconoir_map;
-import 'package:iconoir_flutter/regular/menu.dart' as iconoir_menu;
+import 'package:iconoir_flutter/regular/nav_arrow_left.dart' as iconoir_expand;
+import 'package:iconoir_flutter/regular/nav_arrow_right.dart' as iconoir_collapse;
 import 'package:iconoir_flutter/regular/settings.dart' as iconoir_settings;
 import 'package:iconoir_flutter/regular/user_circle.dart' as iconoir_user;
-import 'package:iconoir_flutter/regular/xmark.dart' as iconoir_xmark;
 
-import '../../../core/animations/app_animations.dart';
 import '../../../core/theme/theme_extensions.dart';
+import '../../../storage/preferences/app_preferences.dart';
 
 class FloatingBottomNavbar extends StatefulWidget {
   final int currentIndex;
   final ValueChanged<int> onTabSelected;
+  final NavbarCollapseBehavior collapseBehavior;
 
   const FloatingBottomNavbar({
     super.key,
     required this.currentIndex,
     required this.onTabSelected,
+    this.collapseBehavior = NavbarCollapseBehavior.never,
   });
 
   @override
-  State<FloatingBottomNavbar> createState() => _FloatingBottomNavbarState();
+  State<FloatingBottomNavbar> createState() => FloatingBottomNavbarState();
 }
 
-class _FloatingBottomNavbarState extends State<FloatingBottomNavbar>
-    with SingleTickerProviderStateMixin {
-  bool _isExpanded = false;
-  late final AnimationController _controller;
-  late final Animation<double> _expandAnimation;
+class FloatingBottomNavbarState extends State<FloatingBottomNavbar>
+    with TickerProviderStateMixin {
+  int _activeIndex = 0;
+  int _previousIndex = 0;
+  bool _isExpanded = true;
 
-  late int _activeIndex;
+  late final AnimationController _entranceController;
+  late final Animation<double> _entranceAnimation;
+
+  late final AnimationController _slideController;
+  late Animation<double> _leftAnim;
+  late Animation<double> _widthAnim;
+
+  // Set by LayoutBuilder
+  double _cellWidth = 0;
+  double _pillBaseWidth = 0;
+  double _navAreaFullWidth = 0;
+
+  static const _barHeight = 60.0;
+  static const _padding = 5.0;
+  // The toggle slot is always a square on the right
+  static const _toggleWidth = _barHeight;
 
   static const _items = [
     _NavItemData(label: 'Home', index: 0),
@@ -40,266 +57,293 @@ class _FloatingBottomNavbarState extends State<FloatingBottomNavbar>
     _NavItemData(label: 'Settings', index: 3),
   ];
 
+  bool get isExpanded => _isExpanded;
+  bool get _canCollapse =>
+      widget.collapseBehavior != NavbarCollapseBehavior.never;
+
+  void collapseIfNeeded() {
+    if (widget.collapseBehavior == NavbarCollapseBehavior.onExternalTouch &&
+        _isExpanded) {
+      _setExpanded(false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _activeIndex = widget.currentIndex;
-    _controller = AnimationController(
-      duration: AppAnimations.medium,
+    _previousIndex = widget.currentIndex;
+
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 380),
       vsync: this,
     );
-    _expandAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: AppAnimations.curve,
+    _leftAnim = ConstantTween<double>(0).animate(_slideController);
+    _widthAnim = ConstantTween<double>(0).animate(_slideController);
+
+    _entranceController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
     );
+    _entranceAnimation = CurvedAnimation(
+      parent: _entranceController,
+      curve: Curves.easeOutBack,
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _entranceController.forward();
+    });
   }
 
   @override
-  void didUpdateWidget(FloatingBottomNavbar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentIndex != widget.currentIndex) {
+  void didUpdateWidget(FloatingBottomNavbar old) {
+    super.didUpdateWidget(old);
+    if (old.currentIndex != widget.currentIndex) {
       setState(() => _activeIndex = widget.currentIndex);
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _entranceController.dispose();
+    _slideController.dispose();
     super.dispose();
   }
 
-  void _toggle() {
-    setState(() => _isExpanded = !_isExpanded);
-    if (_isExpanded) {
-      _controller.forward();
-    } else {
-      _controller.reverse();
-    }
-  }
-
-  void _collapse() {
-    if (_isExpanded) _toggle();
+  void _setExpanded(bool expanded) {
+    setState(() => _isExpanded = expanded);
+    if (!expanded) _slideController.stop();
   }
 
   void _selectTab(int index) {
+    if (index == _activeIndex) return;
+    _previousIndex = _activeIndex;
     setState(() => _activeIndex = index);
     widget.onTabSelected(index);
-    // Do NOT collapse — navbar stays open after tab selection
+    _animatePill(from: _previousIndex, to: index);
   }
 
-  Widget _iconFor(int index, Color color) {
-    switch (index) {
-      case 0:
-        return iconoir_home.Home(color: color, width: 22, height: 22);
-      case 1:
-        return iconoir_map.Map(color: color, width: 22, height: 22);
-      case 2:
-        return iconoir_user.UserCircle(color: color, width: 22, height: 22);
-      case 3:
-        return iconoir_settings.Settings(color: color, width: 22, height: 22);
-      default:
-        return iconoir_home.Home(color: color, width: 22, height: 22);
-    }
+  void _animatePill({required int from, required int to}) {
+    if (_cellWidth == 0) return;
+
+    final fromLeft =
+        _cellWidth * from + (_cellWidth - _pillBaseWidth) / 2;
+    final toLeft =
+        _padding + _cellWidth * to + (_cellWidth - _pillBaseWidth) / 2;
+
+    _widthAnim = ConstantTween<double>(_pillBaseWidth).animate(_slideController);
+    _leftAnim = Tween<double>(begin: fromLeft, end: toLeft).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.easeInOutCubic),
+    );
+
+    _slideController
+      ..reset()
+      ..forward();
   }
+
+  Widget _iconFor(int index, Color color) => switch (index) {
+        0 => iconoir_home.Home(color: color, width: 22, height: 22),
+        1 => iconoir_map.Map(color: color, width: 22, height: 22),
+        2 => iconoir_user.UserCircle(color: color, width: 22, height: 22),
+        3 => iconoir_settings.Settings(color: color, width: 22, height: 22),
+        _ => iconoir_home.Home(color: color, width: 22, height: 22),
+      };
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    return SizedBox(
-      height: screenHeight,
-      child: Stack(
-        children: [
-          // Dismiss overlay (tap outside to collapse)
-          if (_isExpanded)
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: _collapse,
-                behavior: HitTestBehavior.opaque,
-                child: const SizedBox.expand(),
-              ),
-            ),
-          // Navbar — anchored to bottom-right
-          Positioned(
-            bottom: 32,
-            right: 20,
-            child: AnimatedBuilder(
-              animation: _expandAnimation,
-              builder: (context, _) => _buildBar(context),
-            ),
-          ),
-        ],
+    return AnimatedBuilder(
+      animation: _entranceController,
+      builder: (context, child) => IgnorePointer(
+        ignoring: _entranceController.value == 0,
+        child: ScaleTransition(
+          scale: _entranceAnimation,
+          alignment: Alignment.bottomCenter,
+          child: child,
+        ),
       ),
+      child: _buildBar(context),
     );
   }
 
   Widget _buildBar(BuildContext context) {
-    final fillColor = context.glassColor;
     final borderColor = context.appColors.outline.withValues(alpha: 0.15);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
 
-    // Expand from right: collapsed pill is 56 wide, expands leftward to fill
-    final maxWidth = MediaQuery.of(context).size.width - 40;
-    final width = lerpDouble(56, maxWidth, _expandAnimation.value)!;
-    final radius = lerpDouble(28, 20, _expandAnimation.value)!;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Nav area = full width minus toggle slot (when collapsible).
+        // Subtract 2px for the 1px border on each side.
+        const borderWidth = 2.0;
+        _navAreaFullWidth = _canCollapse
+            ? constraints.maxWidth - _toggleWidth - borderWidth
+            : constraints.maxWidth - borderWidth;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          width: width,
-          height: 60,
-          decoration: BoxDecoration(
-            color: fillColor,
-            borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: borderColor),
-          ),
-          child: _isExpanded || _expandAnimation.value > 0
-              ? _buildExpandedContent(context)
-              : _buildCollapsedContent(context),
-        ),
-      ),
-    );
-  }
+        _pillBaseWidth = _barHeight - _padding * 2;
 
-  Widget _buildCollapsedContent(BuildContext context) {
-    final iconColor = Theme.of(context).colorScheme.onSurface;
-    return GestureDetector(
-      onTap: _toggle,
-      behavior: HitTestBehavior.opaque,
-      child: Center(
-        child: iconoir_menu.Menu(color: iconColor, width: 22, height: 22),
-      ),
-    );
-  }
-
-  Widget _buildExpandedContent(BuildContext context) {
-    final iconColor = Theme.of(context).colorScheme.onSurface;
-    final pillColor = context.glassColor;
-    final pillBorder = context.appColors.outline.withValues(alpha: 0.15);
-
-    final opacity = (_expandAnimation.value * 2 - 1).clamp(0.0, 1.0);
-
-    return Opacity(
-      opacity: opacity,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            // Nav items — each constrained so the active pill label doesn't overflow
-            Expanded(
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              height: _barHeight,
+              decoration: BoxDecoration(
+                color: context.glassColor,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: borderColor),
+              ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: _items.map((item) {
-                  final isActive = _activeIndex == item.index;
-                  final itemIcon = _iconFor(item.index, iconColor);
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  // ── Nav area: animates width 0 ↔ full ──────────────────
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 320),
+                    curve: Curves.easeInOutCubic,
+                    width: _isExpanded ? _navAreaFullWidth : 0,
+                    height: _barHeight,
+                    clipBehavior: Clip.hardEdge,
+                    decoration: const BoxDecoration(),
+                    child: _buildNavArea(context, borderColor, onSurface),
+                  ),
 
-                  return Flexible(
-                    child: _AnimatedNavItem(
-                      icon: itemIcon,
-                      isActive: isActive,
-                      pillColor: pillColor,
-                      pillBorder: pillBorder,
-                      delay: item.index,
-                      animation: _expandAnimation,
-                      onTap: () => _selectTab(item.index),
+                  // ── Toggle button: always visible on the right ──────────
+                  if (_canCollapse)
+                    SizedBox(
+                      width: _toggleWidth,
+                      height: _barHeight,
+                      child: GestureDetector(
+                        onTap: () => _setExpanded(!_isExpanded),
+                        behavior: HitTestBehavior.opaque,
+                        child: Center(
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 220),
+                            transitionBuilder: (child, anim) => FadeTransition(
+                              opacity: anim,
+                              child: ScaleTransition(scale: anim, child: child),
+                            ),
+                            child: _isExpanded
+                                ? iconoir_collapse.NavArrowRight(
+                                    key: const ValueKey('collapse'),
+                                    color: onSurface.withValues(alpha: 0.4),
+                                    width: 20,
+                                    height: 20,
+                                  )
+                                : iconoir_expand.NavArrowLeft(
+                                    key: const ValueKey('expand'),
+                                    color: onSurface.withValues(alpha: 0.8),
+                                    width: 20,
+                                    height: 20,
+                                  ),
+                          ),
+                        ),
+                      ),
                     ),
-                  );
-                }).toList(),
+                ],
               ),
             ),
+          ),
+        );
+      },
+    );
+  }
 
-            // Divider
-            Container(
-              width: 1,
-              height: 28,
-              color: context.appColors.outline.withValues(alpha: 0.15),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-            ),
+  Widget _buildNavArea(
+      BuildContext context, Color borderColor, Color onSurface) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 1) return const SizedBox.shrink();
 
-            // Close button
-            GestureDetector(
-              onTap: _collapse,
-              behavior: HitTestBehavior.opaque,
-              child: SizedBox(
-                width: 40,
-                height: 60,
-                child: Center(
-                  child: iconoir_xmark.Xmark(
-                    color: iconColor.withValues(alpha: 0.6),
-                    width: 20,
-                    height: 20,
+        _cellWidth = constraints.maxWidth / _items.length;
+
+        final pillLeft =
+            _cellWidth * _activeIndex + (_cellWidth - _pillBaseWidth) / 2;
+
+        return AnimatedBuilder(
+          animation: _slideController,
+          builder: (context, _) {
+            final isSliding = _slideController.isAnimating;
+            final left = isSliding ? _leftAnim.value : pillLeft;
+            final width = isSliding ? _widthAnim.value : _pillBaseWidth;
+
+            return Stack(
+              children: [
+                // Pill background
+                Positioned(
+                  left: left,
+                  top: (_barHeight - _pillBaseWidth) / 2,
+                  bottom: (_barHeight - _pillBaseWidth) / 2,
+                  width: width,
+                  child: _PillBackground(
+                    borderColor: borderColor,
+                    glassColor: context.glassColor,
                   ),
                 ),
-              ),
+                // Icons row — always above pill
+                Row(
+                  children: List.generate(_items.length, (i) {
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () => _selectTab(i),
+                        behavior: HitTestBehavior.opaque,
+                        child: Center(
+                          child: _iconFor(
+                            i,
+                            onSurface.withValues(
+                              alpha: i == _activeIndex ? 1.0 : 0.45,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PillBackground extends StatelessWidget {
+  final Color borderColor;
+  final Color glassColor;
+
+  const _PillBackground({required this.borderColor, required this.glassColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: glassColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.10),
+                Colors.white.withValues(alpha: 0.0),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _NavItemData {
   final String label;
   final int index;
   const _NavItemData({required this.label, required this.index});
-}
-
-class _AnimatedNavItem extends StatelessWidget {
-  final Widget icon;
-  final bool isActive;
-  final Color pillColor;
-  final Color pillBorder;
-  final int delay;
-  final Animation<double> animation;
-  final VoidCallback onTap;
-
-  const _AnimatedNavItem({
-    required this.icon,
-    required this.isActive,
-    required this.pillColor,
-    required this.pillBorder,
-    required this.delay,
-    required this.animation,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        final staggerStart = delay * 0.1;
-        final progress =
-            ((animation.value - staggerStart) / (1 - staggerStart))
-                .clamp(0.0, 1.0);
-
-        return Opacity(
-          opacity: progress,
-          child: Transform.scale(
-            scale: 0.6 + progress * 0.4,
-            child: child,
-          ),
-        );
-      },
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: AppAnimations.medium,
-          curve: AppAnimations.curve,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          decoration: isActive
-              ? BoxDecoration(
-                  color: pillColor,
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: pillBorder),
-                )
-              : null,
-          child: Center(child: icon),
-        ),
-      ),
-    );
-  }
 }
