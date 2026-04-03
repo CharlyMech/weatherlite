@@ -155,8 +155,6 @@ extension AppColorsToThemeData on AppColors {
       // ── Theme extensions ──────────────────────────────────────────────
       extensions: [
         AppColorsExtension(
-          skyGradientTop: skyTop,
-          skyGradientBottom: skyBottom,
           rainTint: rain,
           snowTint: snow,
           sunTint: sun,

@@ -9,8 +9,6 @@ import 'package:flutter/material.dart';
 /// ```
 class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   // ── Weather colors ──────────────────────────────────────────────────────
-  final Color skyGradientTop;
-  final Color skyGradientBottom;
   final Color rainTint;
   final Color snowTint;
   final Color sunTint;
@@ -35,8 +33,6 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   final Color night;
 
   const AppColorsExtension({
-    required this.skyGradientTop,
-    required this.skyGradientBottom,
     required this.rainTint,
     required this.snowTint,
     required this.sunTint,
@@ -77,8 +73,6 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
     Color? night,
   }) {
     return AppColorsExtension(
-      skyGradientTop: skyGradientTop ?? this.skyGradientTop,
-      skyGradientBottom: skyGradientBottom ?? this.skyGradientBottom,
       rainTint: rainTint ?? this.rainTint,
       snowTint: snowTint ?? this.snowTint,
       sunTint: sunTint ?? this.sunTint,
@@ -102,9 +96,6 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   AppColorsExtension lerp(AppColorsExtension? other, double t) {
     if (other is! AppColorsExtension) return this;
     return AppColorsExtension(
-      skyGradientTop: Color.lerp(skyGradientTop, other.skyGradientTop, t)!,
-      skyGradientBottom:
-          Color.lerp(skyGradientBottom, other.skyGradientBottom, t)!,
       rainTint: Color.lerp(rainTint, other.rainTint, t)!,
       snowTint: Color.lerp(snowTint, other.snowTint, t)!,
       sunTint: Color.lerp(sunTint, other.sunTint, t)!,

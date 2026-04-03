@@ -89,12 +89,6 @@ class AppColors {
   // weather widgets and will be stored in the settings BLoC state so that
   // any widget tree can access them without a BuildContext theme lookup.
 
-  /// Gradient start color for the sky background (top).
-  final String skyGradientTop;
-
-  /// Gradient end color for the sky background (bottom).
-  final String skyGradientBottom;
-
   /// Color used to tint precipitation / rain indicators.
   final String rainTint;
 
@@ -130,8 +124,6 @@ class AppColors {
     required this.onInactiveColor,
     required this.outlineColor,
     required this.shadowColor,
-    required this.skyGradientTop,
-    required this.skyGradientBottom,
     required this.rainTint,
     required this.snowTint,
     required this.sunTint,
@@ -165,8 +157,6 @@ class AppColors {
   Color get onInactive => parse(onInactiveColor);
   Color get outline => parse(outlineColor);
   Color get shadow => parse(shadowColor);
-  Color get skyTop => parse(skyGradientTop);
-  Color get skyBottom => parse(skyGradientBottom);
   Color get rain => parse(rainTint);
   Color get snow => parse(snowTint);
   Color get sun => parse(sunTint);
@@ -199,8 +189,6 @@ const Map<ThemeType, AppColors> appColorSchemes = {
     onInactiveColor: '#ffffff',
     outlineColor: '#777777',
     shadowColor: '#00000033',
-    skyGradientTop: '#89b4d8',
-    skyGradientBottom: '#c8dff0',
     rainTint: '#7a9eb8',
     snowTint: '#ccdde8',
     sunTint: '#FFD166',
@@ -229,8 +217,6 @@ const Map<ThemeType, AppColors> appColorSchemes = {
     onInactiveColor: '#000000',
     outlineColor: '#474747',
     shadowColor: '#000000',
-    skyGradientTop: '#1c2b3a',
-    skyGradientBottom: '#2a3d52',
     rainTint: '#1e2e3e',
     snowTint: '#2a3a4a',
     sunTint: '#FFD166',
